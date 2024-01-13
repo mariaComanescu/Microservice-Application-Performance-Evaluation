@@ -1,0 +1,47 @@
+version: "3.8"
+services:
+  mongo:
+    image: mongo:4.4
+    container_name: mongo_container
+    hostname: mongo
+    restart: unless-stopped
+    ports:
+      - 27018:27017
+    volumes:
+      - ./init-mongo.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    networks:
+      - main-network
+#    command: ["--bind_ip", "0.0.0.0"]
+    
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: web_app:latest
+    container_name: web_container
+    restart: on-failure
+    depends_on:
+      - mongo
+    ports:
+      - 8080:8080
+    networks:
+      - main-network
+
+  prometheus:
+    image: "prom/prometheus"
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prom.yml:/etc/prometheus/prometheus.yml
+    container_name: prometheus
+
+  grafana:
+      image: "grafana/grafana"
+      ports:
+        - "3000:3000"
+      container_name: grafana
+
+networks:
+  main-network:
+    external:
+      name: my-network
